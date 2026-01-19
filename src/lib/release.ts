@@ -24,7 +24,8 @@ export function runReleasePipeline(context: ReleaseContext) {
   fs.mkdirSync(buildDir, { recursive: true });
   fs.mkdirSync(releaseDir, { recursive: true });
 
-  const notaryKeyPath = writeNotaryKey(buildDir, env.APP_STORE_CONNECT_PRIVATE_KEY);
+  const needsNotary = pipeline.notarizeApp || pipeline.notarizeDmg;
+  const notaryKeyPath = needsNotary ? writeNotaryKey(buildDir, env.APP_STORE_CONNECT_PRIVATE_KEY) : null;
 
   try {
     buildApp(project, derivedData, env.DEVELOPER_ID_APPLICATION);
@@ -41,6 +42,9 @@ export function runReleasePipeline(context: ReleaseContext) {
     signApp(appPath, env.DEVELOPER_ID_APPLICATION, pipeline.entitlementsPath);
 
     if (pipeline.notarizeApp) {
+      if (!notaryKeyPath) {
+        throw new AppdropError("Missing notarization key", 3);
+      }
       run("/usr/bin/ditto", ["-c", "-k", "--keepParent", appPath, appZip]);
       notarizeArtifact(notaryKeyPath, env, appZip, "app");
       run("xcrun", ["stapler", "staple", appPath]);
@@ -51,6 +55,9 @@ export function runReleasePipeline(context: ReleaseContext) {
       createDmg(appPath, dmgPath, project.name, env.DEVELOPER_ID_APPLICATION);
 
       if (pipeline.notarizeDmg) {
+        if (!notaryKeyPath) {
+          throw new AppdropError("Missing notarization key", 3);
+        }
         notarizeArtifact(notaryKeyPath, env, dmgPath, "dmg");
         run("xcrun", ["stapler", "staple", dmgPath]);
       }
@@ -62,7 +69,9 @@ export function runReleasePipeline(context: ReleaseContext) {
       }
     }
   } finally {
-    fs.rmSync(notaryKeyPath, { force: true });
+    if (notaryKeyPath) {
+      fs.rmSync(path.dirname(notaryKeyPath), { recursive: true, force: true });
+    }
   }
 }
 
