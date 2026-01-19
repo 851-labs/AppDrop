@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+  <key>SUFeedURL</key>
+  <string>https://example.com/appcast.xml</string>
+  <key>SUPublicEDKey</key>
+  <string>example</string>
+</dict>
+</plist>
