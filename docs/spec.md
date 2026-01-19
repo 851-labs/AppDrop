@@ -24,6 +24,13 @@ appdrop builds, signs, notarizes, and packages macOS apps with optional Sparkle 
 - `--plain`
 - `-n, --dry-run` (print pipeline only)
 - `--no-input`
+- `--scheme <name>`
+- `--project <path>`
+- `--output <dir>`
+- `--app-path <path>`
+- `--dmg-path <path>`
+- `--zip-path <path>`
+- `--appcast-url <url>`
 
 ## Environment Variables
 
@@ -51,7 +58,7 @@ Optional:
 ## Entitlements
 
 `doctor --fix` creates:
-- `Resources/char.entitlements`
+- `Resources/<app>.entitlements`
 - `Resources/sparkle.entitlements`
 
 And updates the Xcode project to reference them.
