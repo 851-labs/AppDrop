@@ -4,12 +4,6 @@ pre-commit:
     tests:
       run: bun test
 
-pre-push:
-  parallel: true
-  commands:
-    tests:
-      run: bun test
-
 pre-publish:
   parallel: true
   commands:
