@@ -14,6 +14,10 @@ appdrop builds, signs, notarizes, and packages macOS apps with optional Sparkle 
 - `appdrop doctor` — validate environment
 - `appdrop doctor --fix` — generate entitlements + patch project files
 
+## Release
+
+Tagging the repo (`vX.Y.Z`) triggers a GitHub Release build that uploads a macOS arm64 binary as `appdrop`.
+
 ## Global Flags
 
 - `-h, --help`
