@@ -13,6 +13,12 @@ export SPARKLE_PRIVATE_KEY="BASE64_KEY"
 bun run src/index.ts release --dry-run
 ```
 
+## Install
+
+```
+brew install 851-labs/tap/appdrop
+```
+
 ## Docs
 
 - `docs/spec.md`
