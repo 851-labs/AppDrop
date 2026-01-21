@@ -50,6 +50,8 @@ Optional:
 - `XCODE_PATH`
 - `APPDROP_VERSION` (build-time override)
 
+appdrop automatically loads a `.env` file in the current working directory (if present).
+
 ## Auto-detect behavior
 
 - Locate the first `.xcodeproj` in the repo unless `--project` is passed.
