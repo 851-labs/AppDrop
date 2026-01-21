@@ -167,8 +167,10 @@ export function signIfExists(target: string, identity: string, entitlementsPath:
 }
 
 export function notarizeArtifact(notaryKeyPath: string, env: Record<string, string>, target: string, label: string) {
-  const timeout = process.env.APPDROP_NOTARY_TIMEOUT ?? "20m";
-  const args = [
+  const timeoutMs = parseDuration(process.env.APPDROP_NOTARY_TIMEOUT ?? "2h");
+  const pollMs = parseDuration(process.env.APPDROP_NOTARY_POLL ?? "30s");
+  const deadline = Date.now() + timeoutMs;
+  const submitArgs = [
     "notarytool",
     "submit",
     target,
@@ -176,31 +178,85 @@ export function notarizeArtifact(notaryKeyPath: string, env: Record<string, stri
     notaryKeyPath,
     "--key-id",
     env.APP_STORE_CONNECT_KEY_ID,
-    "--wait",
-    "--timeout",
-    timeout,
+    "--output-format",
+    "json",
+  ];
+  const infoArgs = [
+    "notarytool",
+    "info",
+    "",
+    "--key",
+    notaryKeyPath,
+    "--key-id",
+    env.APP_STORE_CONNECT_KEY_ID,
     "--output-format",
     "json",
   ];
 
   if (env.APP_STORE_CONNECT_ISSUER_ID) {
-    args.push("--issuer", env.APP_STORE_CONNECT_ISSUER_ID);
+    submitArgs.push("--issuer", env.APP_STORE_CONNECT_ISSUER_ID);
+    infoArgs.push("--issuer", env.APP_STORE_CONNECT_ISSUER_ID);
   }
 
-  process.stdout.write(`Notarizing ${label} (timeout ${timeout})...\n`);
-  const result = run("xcrun", args);
-  if (!result.stdout) {
-    throw new AppdropError(`Notarization failed for ${label}`, 5);
+  process.stdout.write(`Submitting notarization for ${label}...\n`);
+  const submitResult = run("xcrun", submitArgs, { quiet: true });
+  const submission = parseNotaryJson(label, submitResult.stdout);
+  const submissionId = submission.id as string | undefined;
+
+  if (!submissionId) {
+    throw new AppdropError(`Notarization failed for ${label}: missing submission id`, 5);
   }
 
-  try {
-    const parsed = JSON.parse(result.stdout.trim());
-    if (parsed.status && parsed.status !== "Accepted") {
-      throw new AppdropError(`Notarization failed for ${label}: ${parsed.status}`, 5);
+  process.stdout.write(`Notarization ${label} submission id: ${submissionId}\n`);
+  if (submission.status && submission.status !== "In Progress") {
+    if (submission.status === "Accepted") {
+      return;
     }
-  } catch (error) {
-    throw new AppdropError(`Notarization failed for ${label}: ${result.stdout}`, 5);
+    throw new AppdropError(`Notarization failed for ${label}: ${submission.status}`, 5);
   }
+
+  infoArgs[2] = submissionId;
+  while (Date.now() < deadline) {
+    process.stdout.write(`Checking notarization ${label}...\n`);
+    const infoResult = run("xcrun", infoArgs, { quiet: true });
+    const info = parseNotaryJson(label, infoResult.stdout);
+    const status = info.status as string | undefined;
+
+    if (status === "Accepted") {
+      return;
+    }
+
+    if (status && status !== "In Progress") {
+      throw new AppdropError(`Notarization failed for ${label}: ${status}`, 5);
+    }
+
+    run("/bin/sleep", [String(Math.max(1, Math.floor(pollMs / 1000)))]);
+  }
+
+  throw new AppdropError(`Notarization timed out for ${label}: ${submissionId}`, 5);
+}
+
+function parseNotaryJson(label: string, stdout: string) {
+  if (!stdout) {
+    throw new AppdropError(`Notarization failed for ${label}: empty response`, 5);
+  }
+  try {
+    return JSON.parse(stdout.trim());
+  } catch (error) {
+    throw new AppdropError(`Notarization failed for ${label}: ${stdout}`, 5);
+  }
+}
+
+function parseDuration(input: string): number {
+  const match = input.trim().match(/^(\d+)([smh])?$/i);
+  if (!match) {
+    return 0;
+  }
+  const value = Number(match[1]);
+  const unit = (match[2] ?? "s").toLowerCase();
+  if (unit === "h") return value * 60 * 60 * 1000;
+  if (unit === "m") return value * 60 * 1000;
+  return value * 1000;
 }
 
 export function generateAppcast(tools: SparkleTools, dmgPath: string, releaseDir: string, sparkleKey: string) {
