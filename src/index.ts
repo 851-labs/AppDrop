@@ -8,6 +8,7 @@ import { runDmg } from "./commands/dmg";
 import { runNotarize } from "./commands/notarize";
 import { runAppcast } from "./commands/appcast";
 import { runSetupCi } from "./commands/setup-ci";
+import { runPublish } from "./commands/publish";
 
 import { APPDROP_VERSION } from "./lib/version";
 
@@ -112,6 +113,20 @@ try {
         logger
       );
       break;
+    case "publish":
+      runPublish(
+        {
+          tag: flags.publishTag,
+          title: flags.publishTitle,
+          notes: flags.publishNotes,
+          notesFile: flags.publishNotesFile,
+          assets: flags.publishAssets,
+          draft: flags.publishDraft,
+          prerelease: flags.publishPrerelease,
+        },
+        logger
+      );
+      break;
     default:
       logger.warn(`Unknown command: ${command}`);
       process.exit(2);
@@ -126,5 +141,12 @@ try {
 }
 
 function helpText() {
-  return `appdrop - zero-config macOS release CLI\n\nUSAGE:\n  appdrop release [--dry-run]\n  appdrop build\n  appdrop dmg --app-path <path>\n  appdrop notarize --zip-path <path> | --dmg-path <path>\n  appdrop appcast --dmg-path <path>\n  appdrop doctor [--fix]\n  appdrop setup-ci [--xcode-only | --keychain-only]\n\nFLAGS:\n  --scheme <name>        Override scheme\n  --project <path>       Override xcodeproj\n  --output <dir>         Output directory\n  --app-path <path>      Path to .app bundle\n  --dmg-path <path>      Path to .dmg\n  --zip-path <path>      Path to .zip\n  --appcast-url <url>    Override appcast URL\n  --xcode-path <path>    Override Xcode.app location\n  --keychain-name <name> Override keychain name\n  --write-github-env     Emit KEYCHAIN_* lines for GitHub Actions\n  --install-sparkle      Install Sparkle tools if missing\n  --xcode-only           Only run Xcode selection\n  --keychain-only        Only run keychain setup\n  --force                Recreate keychain if it exists\n  -n, --dry-run          Print pipeline only\n  --fix                  Apply project fixes (doctor)\n  --json                 JSON output\n  -q, --quiet            Errors only\n  -v, --verbose          Verbose output\n  --version              Print version\n  -h, --help             Show help\n`;
+  return `appdrop - zero-config macOS release CLI\n\nUSAGE:\n  appdrop release [--dry-run]\n  appdrop build\n  appdrop dmg --app-path <path>\n  appdrop notarize --zip-path <path> | --dmg-path <path>\n  appdrop appcast --dmg-path <path>\n  appdrop doctor [--fix]\n  appdrop setup-ci [--xcode-only | --keychain-only]\n  appdrop publish --asset <path> [--asset <path>...]\n\nFLAGS:\n  --scheme <name>        Override scheme\n  --project <path>       Override xcodeproj\n  --output <dir>         Output directory\n  --app-path <path>      Path to .app bundle\n  --dmg-path <path>      Path to .dmg\n  --zip-path <path>      Path to .zip\n  --appcast-url <url>    Override appcast URL\n  --xcode-path <path>    Override Xcode.app location\n  --keychain-name <name> Override keychain name\n  --write-github-env     Emit KEYCHAIN_* lines for GitHub Actions\n  --install-sparkle      Install Sparkle tools if missing\n  --xcode-only           Only run Xcode selection\n  --keychain-only        Only run keychain setup\n  --force                Recreate keychain if it exists\n  --tag <tag>            Release tag for publish
+  --title <title>        Release title for publish
+  --notes <text>         Release notes for publish
+  --notes-file <path>    Release notes file for publish
+  --asset <path>         Release asset for publish (repeatable)
+  --draft                Create a draft release
+  --prerelease           Mark release as prerelease
+  -n, --dry-run          Print pipeline only\n  --fix                  Apply project fixes (doctor)\n  --json                 JSON output\n  -q, --quiet            Errors only\n  -v, --verbose          Verbose output\n  --version              Print version\n  -h, --help             Show help\n`;
 }

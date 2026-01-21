@@ -26,6 +26,13 @@ export interface GlobalFlags {
   writeGithubEnv: boolean;
   force: boolean;
   installSparkle: boolean;
+  publishTag?: string;
+  publishTitle?: string;
+  publishNotes?: string;
+  publishNotesFile?: string;
+  publishAssets: string[];
+  publishDraft: boolean;
+  publishPrerelease: boolean;
 }
 
 export interface ParsedArgs {
@@ -57,6 +64,13 @@ export function parseArgs(argv: string[]): ParsedArgs {
     writeGithubEnv: false,
     force: false,
     installSparkle: false,
+    publishTag: undefined,
+    publishTitle: undefined,
+    publishNotes: undefined,
+    publishNotesFile: undefined,
+    publishAssets: [],
+    publishDraft: false,
+    publishPrerelease: false,
   };
 
   const args = [...argv];
@@ -152,6 +166,32 @@ export function parseArgs(argv: string[]): ParsedArgs {
         break;
       case "--install-sparkle":
         flags.installSparkle = true;
+        break;
+      case "--tag":
+        flags.publishTag = consumeValue(args, index, arg);
+        index += 1;
+        break;
+      case "--title":
+        flags.publishTitle = consumeValue(args, index, arg);
+        index += 1;
+        break;
+      case "--notes":
+        flags.publishNotes = consumeValue(args, index, arg);
+        index += 1;
+        break;
+      case "--notes-file":
+        flags.publishNotesFile = consumeValue(args, index, arg);
+        index += 1;
+        break;
+      case "--asset":
+        flags.publishAssets.push(consumeValue(args, index, arg));
+        index += 1;
+        break;
+      case "--draft":
+        flags.publishDraft = true;
+        break;
+      case "--prerelease":
+        flags.publishPrerelease = true;
         break;
       default:
         if (arg.startsWith("-")) {

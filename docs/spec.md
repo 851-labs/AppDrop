@@ -14,6 +14,7 @@ appdrop builds, signs, notarizes, and packages macOS apps with optional Sparkle 
 - `appdrop doctor` — validate environment
 - `appdrop doctor --fix` — generate entitlements + patch project files
 - `appdrop setup-ci` — select Xcode + import signing cert for CI
+- `appdrop publish` — create a GitHub release with assets
 
 ## Release
 
@@ -46,6 +47,15 @@ Tagging the repo (`vX.Y.Z`) triggers a GitHub Release build that uploads a macOS
 - `--install-sparkle`
 - `--force`
 
+`publish` flags:
+- `--tag <tag>`
+- `--title <title>`
+- `--notes <text>`
+- `--notes-file <path>`
+- `--asset <path>` (repeatable)
+- `--draft`
+- `--prerelease`
+
 ## Environment Variables
 
 Required:
@@ -58,6 +68,7 @@ Optional:
 - `APP_STORE_CONNECT_ISSUER_ID`
 - `DEVELOPER_ID_CERT_P12`
 - `DEVELOPER_ID_CERT_PASSWORD`
+- `GITHUB_TOKEN`
 - `SPARKLE_BIN`
 - `XCODE_PATH`
 - `APPDROP_VERSION` (build-time override)
@@ -72,6 +83,8 @@ appdrop automatically loads a `.env` file in the current working directory (if p
 `setup-ci` auto-detects:
 - GitHub Actions (`GITHUB_ENV`) to export keychain env values.
 - Sparkle tools when `SPARKLE_PRIVATE_KEY` is set.
+
+`publish` uses `GITHUB_TOKEN` (or `GH_TOKEN`) and the `gh` CLI.
 
 ## Example Usage
 
@@ -91,6 +104,12 @@ Only create the keychain (no Xcode changes):
 
 ```
 appdrop setup-ci --keychain-only --keychain-name appdrop-ci
+```
+
+Publish a release with assets:
+
+```
+appdrop publish --tag v1.2.3 --asset build/release/app.dmg --asset build/release/appcast.xml
 ```
 
 ## Auto-detect behavior
