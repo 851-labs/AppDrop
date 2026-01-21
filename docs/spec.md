@@ -68,6 +68,26 @@ appdrop automatically loads a `.env` file in the current working directory (if p
 - `DEVELOPER_ID_CERT_PASSWORD`
 - `XCODE_PATH` (optional)
 
+## Example Usage
+
+CI setup (Xcode + signing keychain):
+
+```
+appdrop setup-ci --write-github-env
+```
+
+Only select Xcode:
+
+```
+appdrop setup-ci --xcode-only
+```
+
+Only create the keychain (no Xcode changes):
+
+```
+appdrop setup-ci --keychain-only --keychain-name appdrop-ci
+```
+
 ## Auto-detect behavior
 
 - Locate the first `.xcodeproj` in the repo unless `--project` is passed.
