@@ -63,12 +63,22 @@ export function resolveSetupCiPlan(options: SetupCiOptions): SetupCiPlan {
 function selectXcode(explicitPath: string | undefined, logger: Logger) {
   const xcodePath = resolveXcodePath(explicitPath);
   const developerDir = path.join(xcodePath, "Contents", "Developer");
-  const useSudo = shouldUseSudo();
-  const command = useSudo ? "sudo" : "xcode-select";
-  const args = useSudo ? ["xcode-select", "-s", developerDir] : ["-s", developerDir];
+  const currentDevDir = run("xcode-select", ["-p"], { quiet: true }).stdout.trim();
+  if (currentDevDir === developerDir) {
+    logger.info(`Xcode already selected: ${xcodePath}`);
+    run("xcodebuild", ["-version"]);
+    return;
+  }
+
+  if (shouldUseSudo() && !canUseSudo()) {
+    throw new AppdropError(
+      `Unable to run sudo for xcode-select. Run \"sudo xcode-select -s ${developerDir}\" manually.`,
+      1
+    );
+  }
 
   logger.info(`Selecting Xcode: ${xcodePath}`);
-  run(command, args);
+  run("sudo", ["xcode-select", "-s", developerDir]);
   run("xcodebuild", ["-version"]);
 }
 
@@ -168,6 +178,15 @@ function normalizeKeychainName(name: string) {
 
 function shouldUseSudo() {
   return process.env.CI === "true" || process.env.GITHUB_ACTIONS === "true";
+}
+
+function canUseSudo() {
+  try {
+    run("/usr/bin/sudo", ["-n", "true"], { quiet: true });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function isGithubActions() {
