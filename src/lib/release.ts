@@ -167,6 +167,7 @@ export function signIfExists(target: string, identity: string, entitlementsPath:
 }
 
 export function notarizeArtifact(notaryKeyPath: string, env: Record<string, string>, target: string, label: string) {
+  const timeout = process.env.APPDROP_NOTARY_TIMEOUT ?? "20m";
   const args = [
     "notarytool",
     "submit",
@@ -176,6 +177,8 @@ export function notarizeArtifact(notaryKeyPath: string, env: Record<string, stri
     "--key-id",
     env.APP_STORE_CONNECT_KEY_ID,
     "--wait",
+    "--timeout",
+    timeout,
     "--output-format",
     "json",
   ];
@@ -184,7 +187,8 @@ export function notarizeArtifact(notaryKeyPath: string, env: Record<string, stri
     args.push("--issuer", env.APP_STORE_CONNECT_ISSUER_ID);
   }
 
-  const result = run("xcrun", args, { quiet: true });
+  process.stdout.write(`Notarizing ${label} (timeout ${timeout})...\n`);
+  const result = run("xcrun", args);
   if (!result.stdout) {
     throw new AppdropError(`Notarization failed for ${label}`, 5);
   }
