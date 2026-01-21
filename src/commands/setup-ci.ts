@@ -95,11 +95,16 @@ function setupKeychainForCi(options: SetupCiOptions, logger: Logger) {
   const keychainName = normalizeKeychainName(options.keychainName ?? "appdrop-ci");
   const keychainPassword = crypto.randomBytes(12).toString("hex");
 
-  if (options.force) {
-    try {
-      run("security", ["delete-keychain", keychainName], { quiet: true });
-    } catch {
-      // ignore missing keychain
+  const keychainExists = hasKeychain(keychainName);
+  if (keychainExists) {
+    if (options.force || isGithubActions()) {
+      try {
+        run("security", ["delete-keychain", keychainName], { quiet: true });
+      } catch {
+        // ignore missing keychain
+      }
+    } else {
+      throw new AppdropError(`Keychain already exists: ${keychainName}. Use --force to recreate.`, 1);
     }
   }
 
@@ -183,6 +188,15 @@ function shouldUseSudo() {
 function canUseSudo() {
   try {
     run("/usr/bin/sudo", ["-n", "true"], { quiet: true });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function hasKeychain(keychainName: string) {
+  try {
+    run("security", ["show-keychain-info", keychainName], { quiet: true });
     return true;
   } catch {
     return false;
