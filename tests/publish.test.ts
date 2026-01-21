@@ -1,6 +1,10 @@
 import { describe, expect, it } from "bun:test";
 
-import { buildPublishArgs } from "../src/commands/publish";
+import fs from "fs";
+import os from "os";
+import path from "path";
+
+import { buildPublishArgs, resolvePublishAssets } from "../src/commands/publish";
 import { UsageError } from "../src/lib/errors";
 
 describe("publish args", () => {
@@ -51,6 +55,27 @@ describe("publish args", () => {
         notesFile: "notes.md",
       })
     ).toThrow(UsageError);
+  });
+});
+
+describe("publish assets", () => {
+  it("auto-detects assets in build/release", () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "appdrop-publish-"));
+    const releaseDir = path.join(tempDir, "build", "release");
+    fs.mkdirSync(releaseDir, { recursive: true });
+    fs.writeFileSync(path.join(releaseDir, "appcast.xml"), "");
+    fs.writeFileSync(path.join(releaseDir, "char.dmg"), "");
+    fs.writeFileSync(path.join(releaseDir, "notes.txt"), "");
+
+    try {
+      const assets = resolvePublishAssets([], tempDir);
+      expect(assets).toEqual([
+        path.join(releaseDir, "appcast.xml"),
+        path.join(releaseDir, "char.dmg"),
+      ]);
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 });
 

@@ -85,6 +85,7 @@ appdrop automatically loads a `.env` file in the current working directory (if p
 - Sparkle tools when `SPARKLE_PRIVATE_KEY` is set.
 
 `publish` uses `GITHUB_TOKEN` (or `GH_TOKEN`) and the `gh` CLI.
+If no assets are specified, `publish` uploads `build/release/*.dmg`, `build/release/*.pkg`, and `build/release/appcast.xml` when present.
 
 ## Example Usage
 
