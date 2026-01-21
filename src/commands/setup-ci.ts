@@ -18,33 +18,46 @@ export interface SetupCiOptions {
   installSparkle: boolean;
 }
 
+export interface SetupCiPlan {
+  setupXcode: boolean;
+  setupKeychain: boolean;
+  writeGithubEnv: boolean;
+  installSparkle: boolean;
+}
+
 export function runSetupCi(options: SetupCiOptions, logger: Logger) {
   loadEnv([]);
   if (options.xcodeOnly && options.keychainOnly) {
     throw new UsageError("Use only one of --xcode-only or --keychain-only.");
   }
 
-  const setupXcode = !options.keychainOnly;
-  const setupKeychain = !options.xcodeOnly;
-  const shouldWriteGithubEnv = options.writeGithubEnv || isGithubActions();
+  const plan = resolveSetupCiPlan(options);
 
-  if (setupXcode) {
+  if (plan.setupXcode) {
     selectXcode(options.xcodePath, logger);
   }
 
-  if (setupKeychain) {
+  if (plan.setupKeychain) {
     const { keychainPath, password } = setupKeychainForCi(options, logger);
-    if (shouldWriteGithubEnv) {
+    if (plan.writeGithubEnv) {
       writeGithubEnv({ keychainPath, password }, logger);
     } else {
       logger.info(`Keychain ready: ${keychainPath}`);
     }
   }
 
-  const needsSparkle = options.installSparkle || shouldInstallSparkle();
-  if (needsSparkle) {
+  if (plan.installSparkle) {
     ensureSparkleTools(logger);
   }
+}
+
+export function resolveSetupCiPlan(options: SetupCiOptions): SetupCiPlan {
+  return {
+    setupXcode: !options.keychainOnly,
+    setupKeychain: !options.xcodeOnly,
+    writeGithubEnv: options.writeGithubEnv || isGithubActions(),
+    installSparkle: options.installSparkle || shouldInstallSparkle(),
+  };
 }
 
 function selectXcode(explicitPath: string | undefined, logger: Logger) {
