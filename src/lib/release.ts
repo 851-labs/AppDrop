@@ -122,24 +122,29 @@ export function signApp(appPath: string, identity: string, entitlementsPath: str
 }
 
 export function signSparkle(appPath: string, identity: string, sparkleEntitlementsPath: string | null) {
-  if (!sparkleEntitlementsPath) {
+  const sparkleFramework = path.join(appPath, "Contents/Frameworks/Sparkle.framework");
+  if (!fs.existsSync(sparkleFramework)) {
     return;
   }
 
-  const sparkleFramework = path.join(appPath, "Contents/Frameworks/Sparkle.framework");
   const sparkleVersion = path.join(sparkleFramework, "Versions/B");
   const updaterApp = path.join(sparkleVersion, "Updater.app");
   const autoupdate = path.join(sparkleVersion, "Autoupdate");
   const downloaderXpc = path.join(sparkleVersion, "XPCServices/Downloader.xpc");
   const installerXpc = path.join(sparkleVersion, "XPCServices/Installer.xpc");
 
+  const shouldUseEntitlements = Boolean(sparkleEntitlementsPath);
+
   signIfExists(path.join(updaterApp, "Contents/MacOS/Updater"), identity, sparkleEntitlementsPath);
   signIfExists(autoupdate, identity, sparkleEntitlementsPath);
-  signIfExists(path.join(downloaderXpc, "Contents/MacOS/Downloader"), identity, sparkleEntitlementsPath);
-  signIfExists(path.join(installerXpc, "Contents/MacOS/Installer"), identity, sparkleEntitlementsPath);
-  signIfExists(updaterApp, identity, sparkleEntitlementsPath);
-  signIfExists(downloaderXpc, identity, sparkleEntitlementsPath);
-  signIfExists(installerXpc, identity, sparkleEntitlementsPath);
+
+  if (shouldUseEntitlements) {
+    signIfExists(updaterApp, identity, sparkleEntitlementsPath);
+  } else {
+    signIfExists(updaterApp, identity, null);
+  }
+  signSparkleXpc(downloaderXpc, identity, true);
+  signSparkleXpc(installerXpc, identity);
   signIfExists(sparkleFramework, identity, null);
 }
 
@@ -173,6 +178,29 @@ export function signIfExists(target: string, identity: string, entitlementsPath:
   if (entitlementsPath) {
     args.push("--entitlements", entitlementsPath);
   }
+  args.push(target);
+  run(args[0], args.slice(1));
+}
+
+function signSparkleXpc(target: string, identity: string, preserveEntitlements = false) {
+  if (!fs.existsSync(target)) {
+    return;
+  }
+
+  const args = [
+    "/usr/bin/codesign",
+    "--force",
+    "--options",
+    "runtime",
+    "--timestamp",
+    "--sign",
+    identity,
+  ];
+
+  if (preserveEntitlements) {
+    args.push("--preserve-metadata=entitlements");
+  }
+
   args.push(target);
   run(args[0], args.slice(1));
 }
