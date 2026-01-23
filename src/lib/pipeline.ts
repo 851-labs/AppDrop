@@ -1,5 +1,4 @@
 import fs from "fs";
-import fs from "fs";
 import path from "path";
 import { DEFAULT_BUILD_DIR, DEFAULT_OUTPUT_DIR } from "./constants";
 import { ProjectInfo } from "./project";
@@ -22,7 +21,6 @@ export interface Pipeline {
   buildDir: string;
   infoPlistPath: string | null;
   entitlementsPath: string | null;
-  sparkleEntitlementsPath: string | null;
   sparkleTools: SparkleTools | null;
   missingEntitlements: boolean;
   missingInfoPlist: boolean;
@@ -42,7 +40,6 @@ export function detectPipeline(project: ProjectInfo, options: DetectionOptions =
   let missingInfoPlist = false;
 
   const entitlementsPath = locateEntitlements(project.root, `${project.name}.entitlements`);
-  const sparkleEntitlementsPath = locateEntitlements(project.root, "sparkle.entitlements");
 
   const sparkleEnabled = infoPlistPath ? hasSparkleKeys(infoPlistPath) : false;
   const sparkleTools = findSparkleTools(options.sparkleBin ?? process.env.SPARKLE_BIN);
@@ -62,9 +59,8 @@ export function detectPipeline(project: ProjectInfo, options: DetectionOptions =
     buildDir,
     infoPlistPath,
     entitlementsPath,
-    sparkleEntitlementsPath,
     sparkleTools,
-    missingEntitlements: !entitlementsPath || (sparkleEnabled && !sparkleEntitlementsPath),
+    missingEntitlements: !entitlementsPath,
     missingInfoPlist,
   };
 }

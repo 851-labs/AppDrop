@@ -11,12 +11,13 @@ describe("release build args", () => {
         scheme: "char",
       },
       "/tmp/derived",
-      "/tmp/char.xcarchive",
-      "Developer ID Application: Example (TEAMID1234)"
+      "/tmp/char.xcarchive"
     );
 
     expect(args).toContain("archive");
     expect(args).not.toContain("build");
+    expect(args).not.toContain("CODE_SIGN_STYLE=Manual");
+    expect(args).not.toContain("CODE_SIGN_IDENTITY");
   });
 
   it("builds export args", () => {

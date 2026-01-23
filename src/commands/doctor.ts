@@ -25,17 +25,6 @@ const CHAR_ENTITLEMENTS = `<?xml version="1.0" encoding="UTF-8"?>
 </plist>
 `;
 
-const SPARKLE_ENTITLEMENTS = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>com.apple.security.app-sandbox</key>
-  <true/>
-  <key>com.apple.security.network.client</key>
-  <true/>
-</dict>
-</plist>
-`;
 
 export function runDoctor(options: DoctorOptions, logger: Logger) {
   const project = findProject(options.root, options.scheme, options.project);
@@ -55,16 +44,9 @@ export function runDoctor(options: DoctorOptions, logger: Logger) {
 
   const resourcesDir = locateResourcesDir(project.root, project.name);
   const charEntitlementsPath = path.join(resourcesDir, `${project.name}.entitlements`);
-  const sparkleEntitlementsPath = path.join(resourcesDir, "sparkle.entitlements");
-
   if (!fs.existsSync(charEntitlementsPath)) {
     fs.writeFileSync(charEntitlementsPath, CHAR_ENTITLEMENTS);
     logger.info(`Created ${charEntitlementsPath}`);
-  }
-
-  if (!fs.existsSync(sparkleEntitlementsPath)) {
-    fs.writeFileSync(sparkleEntitlementsPath, SPARKLE_ENTITLEMENTS);
-    logger.info(`Created ${sparkleEntitlementsPath}`);
   }
 
   const infoPlistPath = locateInfoPlist(project.root);
