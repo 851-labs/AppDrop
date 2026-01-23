@@ -86,7 +86,19 @@ export function buildApp(
   fs.rmSync(archivePath, { recursive: true, force: true });
   fs.rmSync(exportDir, { recursive: true, force: true });
 
-  run("xcodebuild", [
+  // Sparkle expects Xcode archive/export signing. Avoid manual helper re-signing.
+  run("xcodebuild", buildArchiveArgs(project, derivedData, archivePath, identity));
+
+  run("xcodebuild", buildExportArgs(archivePath, exportDir, exportOptionsPath));
+}
+
+export function buildArchiveArgs(
+  project: ProjectInfo,
+  derivedData: string,
+  archivePath: string,
+  identity: string
+) {
+  return [
     "-project",
     project.projectPath,
     "-scheme",
@@ -102,9 +114,11 @@ export function buildApp(
     "CODE_SIGN_STYLE=Manual",
     `CODE_SIGN_IDENTITY=${identity}`,
     "archive",
-  ]);
+  ];
+}
 
-  run("xcodebuild", [
+export function buildExportArgs(archivePath: string, exportDir: string, exportOptionsPath: string) {
+  return [
     "-exportArchive",
     "-archivePath",
     archivePath,
@@ -112,7 +126,7 @@ export function buildApp(
     exportDir,
     "-exportOptionsPlist",
     exportOptionsPath,
-  ]);
+  ];
 }
 
 export function createDmg(appPath: string, dmgPath: string, name: string, identity: string) {
