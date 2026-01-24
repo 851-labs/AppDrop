@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.28 - 2026-01-24
+- feat: add help command
+
 ## 0.1.27 - 2026-01-22
 - fix: archive with Developer ID signing
 

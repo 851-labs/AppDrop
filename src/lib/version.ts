@@ -1,1 +1,1 @@
-export const APPDROP_VERSION = process.env.APPDROP_VERSION ?? "0.1.0";
+export const APPDROP_VERSION = process.env.APPDROP_VERSION ?? "0.1.28";
