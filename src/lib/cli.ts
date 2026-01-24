@@ -39,6 +39,139 @@ export interface GlobalFlags {
 export interface ParsedArgs {
   command: string;
   flags: GlobalFlags;
+  helpCommand?: string;
+}
+
+export const VALID_COMMANDS = [
+  "release",
+  "build",
+  "dmg",
+  "notarize",
+  "appcast",
+  "doctor",
+  "setup-ci",
+  "publish",
+] as const;
+
+const COMMAND_HELP: Record<
+  string,
+  { description: string; usage: string; flags: string[] }
+> = {
+  release: {
+    description: "Build, sign, notarize, and package your macOS app",
+    usage: "appdrop release [options]",
+    flags: [
+      "--scheme <name>       Override scheme",
+      "--project <path>      Override xcodeproj",
+      "--output <dir>        Output directory",
+      "--no-dmg              Skip DMG creation",
+      "--no-notarize         Skip notarization",
+      "--no-sparkle          Skip Sparkle signing + appcast",
+      "-n, --dry-run         Print pipeline only",
+      "--json                JSON output",
+    ],
+  },
+  build: {
+    description: "Build and export the app bundle",
+    usage: "appdrop build [options]",
+    flags: [
+      "--scheme <name>       Override scheme",
+      "--project <path>      Override xcodeproj",
+      "--output <dir>        Output directory",
+      "--json                JSON output",
+    ],
+  },
+  dmg: {
+    description: "Create a DMG from an app bundle",
+    usage: "appdrop dmg --app-path <path> [options]",
+    flags: [
+      "--app-path <path>     Path to .app bundle (required)",
+      "--scheme <name>       Override scheme",
+      "--project <path>      Override xcodeproj",
+      "--output <dir>        Output directory",
+      "--json                JSON output",
+    ],
+  },
+  notarize: {
+    description: "Notarize a DMG or ZIP with Apple",
+    usage: "appdrop notarize --zip-path <path> | --dmg-path <path>",
+    flags: [
+      "--zip-path <path>     Path to .zip",
+      "--dmg-path <path>     Path to .dmg",
+      "--json                JSON output",
+    ],
+  },
+  appcast: {
+    description: "Generate a Sparkle appcast entry",
+    usage: "appdrop appcast --dmg-path <path> [options]",
+    flags: [
+      "--dmg-path <path>     Path to .dmg (required)",
+      "--appcast-url <url>   Override appcast URL",
+      "--output <dir>        Output directory",
+      "--json                JSON output",
+    ],
+  },
+  doctor: {
+    description: "Check project configuration for issues",
+    usage: "appdrop doctor [options]",
+    flags: [
+      "--scheme <name>       Override scheme",
+      "--project <path>      Override xcodeproj",
+      "--fix                 Apply project fixes",
+    ],
+  },
+  "setup-ci": {
+    description: "Configure CI environment (Xcode + keychain)",
+    usage: "appdrop setup-ci [options]",
+    flags: [
+      "--xcode-only          Only run Xcode selection",
+      "--keychain-only       Only run keychain setup",
+      "--xcode-path <path>   Override Xcode.app location",
+      "--keychain-name <n>   Override keychain name",
+      "--write-github-env    Emit KEYCHAIN_* lines for GitHub Actions",
+      "--force               Recreate keychain if it exists",
+      "--install-sparkle     Install Sparkle tools if missing",
+    ],
+  },
+  publish: {
+    description: "Create a GitHub release with assets",
+    usage: "appdrop publish --asset <path> [options]",
+    flags: [
+      "--tag <tag>           Release tag",
+      "--title <title>       Release title",
+      "--notes <text>        Release notes",
+      "--notes-file <path>   Release notes file",
+      "--asset <path>        Release asset (repeatable)",
+      "--draft               Create a draft release",
+      "--prerelease          Mark release as prerelease",
+    ],
+  },
+};
+
+export function commandHelpText(command: string): string {
+  const help = COMMAND_HELP[command];
+  if (!help) {
+    return `Unknown command: ${command}\n\nRun 'appdrop --help' for usage.\n`;
+  }
+
+  const lines = [
+    `${help.description}`,
+    "",
+    "USAGE:",
+    `  ${help.usage}`,
+    "",
+    "FLAGS:",
+    ...help.flags.map((f) => `  ${f}`),
+    "",
+    "GLOBAL FLAGS:",
+    "  -q, --quiet           Errors only",
+    "  -v, --verbose         Verbose output",
+    "  --json                JSON output",
+    "  -h, --help            Show help",
+    "",
+  ];
+
+  return lines.join("\n");
 }
 
 export function parseArgs(argv: string[]): ParsedArgs {
@@ -75,8 +208,46 @@ export function parseArgs(argv: string[]): ParsedArgs {
     publishPrerelease: false,
   };
 
-  const args = [...argv];
-  const command = args.shift() ?? "release";
+  let helpCommand: string | undefined;
+
+  // Pre-scan for global flags (position-independent)
+  for (const arg of argv) {
+    if (arg === "-h" || arg === "--help") {
+      flags.help = true;
+    } else if (arg === "--version") {
+      flags.version = true;
+    }
+  }
+
+  // Filter out pre-scanned global flags for command determination
+  const args = argv.filter((arg) => arg !== "-h" && arg !== "--help" && arg !== "--version");
+
+  // Determine the command
+  let command: string;
+  const firstArg = args[0];
+
+  if (!firstArg || firstArg.startsWith("-")) {
+    // No command specified or starts with flag, default to release
+    command = "release";
+  } else if (firstArg === "help") {
+    // Handle `appdrop help [command]`
+    flags.help = true;
+    command = "help";
+    const secondArg = args[1];
+    if (secondArg && !secondArg.startsWith("-")) {
+      helpCommand = secondArg;
+    }
+    args.shift(); // Remove "help"
+    if (helpCommand) {
+      args.shift(); // Remove the command name
+    }
+  } else {
+    command = args.shift()!;
+    // Track helpCommand for `appdrop <command> --help`
+    if (flags.help) {
+      helpCommand = command;
+    }
+  }
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -206,7 +377,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
     }
   }
 
-  return { command, flags };
+  return { command, flags, helpCommand };
 }
 
 function consumeValue(args: string[], index: number, flag: string): string {

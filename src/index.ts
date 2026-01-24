@@ -1,4 +1,4 @@
-import { parseArgs } from "./lib/cli";
+import { parseArgs, commandHelpText } from "./lib/cli";
 import { Logger } from "./lib/logger";
 import { AppdropError } from "./lib/errors";
 import { runRelease } from "./commands/release";
@@ -12,7 +12,7 @@ import { runPublish } from "./commands/publish";
 
 import { APPDROP_VERSION } from "./lib/version";
 
-const { command, flags } = parseArgs(process.argv.slice(2));
+const { command, flags, helpCommand } = parseArgs(process.argv.slice(2));
 
 if (flags.version) {
   process.stdout.write(`${APPDROP_VERSION}\n`);
@@ -20,7 +20,11 @@ if (flags.version) {
 }
 
 if (flags.help) {
-  process.stdout.write(helpText());
+  if (helpCommand) {
+    process.stdout.write(commandHelpText(helpCommand));
+  } else {
+    process.stdout.write(helpText());
+  }
   process.exit(0);
 }
 
@@ -129,7 +133,7 @@ try {
       );
       break;
     default:
-      logger.warn(`Unknown command: ${command}`);
+      process.stderr.write(`Unknown command: ${command}\n\nRun 'appdrop --help' for usage.\n`);
       process.exit(2);
   }
 } catch (error) {
