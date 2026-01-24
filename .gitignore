@@ -1,0 +1,8 @@
+# Build artifacts
+dist/
+.bun-build
+.bun
+*.bun-build
+
+# macOS
+.DS_Store
