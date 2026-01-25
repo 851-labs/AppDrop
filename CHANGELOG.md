@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.29 - 2026-01-25
+- feat: add Swift Package CLI support
+- feat: add --executable flag for CLI target override
+- feat: auto-detect CLI executables in publish
+
 ## 0.1.28 - 2026-01-24
 - feat: add help command
 

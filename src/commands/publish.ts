@@ -65,7 +65,26 @@ export function resolvePublishAssets(assets: string[], root: string): string[] {
   }
 
   const entries = fs.readdirSync(releaseDir);
-  const selected = entries.filter((entry) => entry.endsWith(".dmg") || entry.endsWith(".pkg") || entry === "appcast.xml");
+  const selected = entries.filter((entry) => {
+    // Include DMG, PKG, and appcast
+    if (entry.endsWith(".dmg") || entry.endsWith(".pkg") || entry === "appcast.xml") {
+      return true;
+    }
+
+    // Include CLI executables (files without extension that are executable)
+    if (!entry.includes(".")) {
+      const fullPath = path.join(releaseDir, entry);
+      try {
+        fs.accessSync(fullPath, fs.constants.X_OK);
+        const stat = fs.statSync(fullPath);
+        return stat.isFile();
+      } catch {
+        return false;
+      }
+    }
+
+    return false;
+  });
   return selected.sort().map((entry) => path.join(releaseDir, entry));
 }
 

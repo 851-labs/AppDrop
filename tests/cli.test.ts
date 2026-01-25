@@ -155,3 +155,16 @@ describe("VALID_COMMANDS", () => {
     expect(VALID_COMMANDS).toContain("publish");
   });
 });
+
+describe("--executable flag", () => {
+  it("parses --executable flag", () => {
+    const result = parseArgs(["release", "--executable", "mycli"]);
+    expect(result.flags.executable).toBe("mycli");
+  });
+
+  it("passes executable to release options", () => {
+    const result = parseArgs(["--executable", "custom-name"]);
+    expect(result.command).toBe("release");
+    expect(result.flags.executable).toBe("custom-name");
+  });
+});

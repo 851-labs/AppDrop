@@ -12,6 +12,83 @@ export interface ReleaseContext {
 }
 
 export function runReleasePipeline(context: ReleaseContext) {
+  if (context.pipeline.projectType === "swift-package") {
+    runCliReleasePipeline(context);
+    return;
+  }
+  runAppReleasePipeline(context);
+}
+
+export function runCliReleasePipeline(context: ReleaseContext) {
+  const { project, pipeline, env } = context;
+
+  const buildDir = pipeline.buildDir;
+  const distDir = path.join(buildDir, "dist");
+  const releaseDir = pipeline.outputDir;
+  const executable = pipeline.executable ?? project.name;
+
+  fs.mkdirSync(buildDir, { recursive: true });
+  fs.mkdirSync(distDir, { recursive: true });
+  fs.mkdirSync(releaseDir, { recursive: true });
+
+  const needsNotary = pipeline.notarizeZip;
+  const notaryKeyPath = needsNotary ? writeNotaryKey(buildDir, env.APP_STORE_CONNECT_PRIVATE_KEY) : null;
+
+  try {
+    // Build for each architecture
+    const builtBinaries: string[] = [];
+    for (const arch of pipeline.architectures) {
+      process.stdout.write(`Building for ${arch}...\n`);
+      run("swift", ["build", "-c", "release", "--arch", arch], { cwd: project.root });
+
+      const binaryPath = path.join(project.root, ".build", `${arch}-apple-macosx`, "release", executable);
+      if (!fs.existsSync(binaryPath)) {
+        throw new AppdropError(`Built binary not found at ${binaryPath}`, 1);
+      }
+      builtBinaries.push(binaryPath);
+    }
+
+    // Create universal binary with lipo
+    const universalBinary = path.join(distDir, executable);
+    process.stdout.write(`Creating universal binary...\n`);
+    run("lipo", ["-create", ...builtBinaries, "-output", universalBinary]);
+
+    // Code sign with hardened runtime
+    if (pipeline.signCli) {
+      process.stdout.write(`Signing binary...\n`);
+      run("codesign", [
+        "--force",
+        "--options", "runtime",
+        "--timestamp",
+        "--sign", env.DEVELOPER_ID_APPLICATION,
+        universalBinary,
+      ]);
+    }
+
+    // Create zip for notarization
+    const zipPath = path.join(distDir, `${executable}.zip`);
+    if (pipeline.createZip) {
+      process.stdout.write(`Creating zip...\n`);
+      run("/usr/bin/ditto", ["-c", "-k", universalBinary, zipPath]);
+    }
+
+    // Notarize
+    if (pipeline.notarizeZip && notaryKeyPath) {
+      notarizeArtifact(notaryKeyPath, env, zipPath, "cli");
+      // Note: Cannot staple to standalone binaries (only .app bundles)
+    }
+
+    // Copy final binary to release directory
+    fs.cpSync(universalBinary, path.join(releaseDir, executable));
+    process.stdout.write(`Binary available at ${path.join(releaseDir, executable)}\n`);
+  } finally {
+    if (notaryKeyPath) {
+      fs.rmSync(path.dirname(notaryKeyPath), { recursive: true, force: true });
+    }
+  }
+}
+
+export function runAppReleasePipeline(context: ReleaseContext) {
   const { project, pipeline, env } = context;
 
   const buildDir = pipeline.buildDir;

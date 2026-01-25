@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { detectPipeline } from "../src/lib/pipeline";
+import { detectPipeline, detectCliPipeline } from "../src/lib/pipeline";
 import { findProject } from "../src/lib/project";
 import path from "path";
 
@@ -42,5 +42,54 @@ describe("pipeline detection", () => {
     const project = findProject(root, undefined, "missing-entitlements.xcodeproj");
     const pipeline = detectPipeline(project, {});
     expect(pipeline.missingEntitlements).toBeTrue();
+  });
+});
+
+describe("CLI pipeline detection", () => {
+  it("creates CLI pipeline for Swift Package", () => {
+    const root = path.join(fixturesRoot, "swift-cli");
+    const project = findProject(root);
+    const pipeline = detectPipeline(project, {});
+    expect(pipeline.projectType).toBe("swift-package");
+  });
+
+  it("enables buildCli, signCli, createZip, notarizeZip", () => {
+    const root = path.join(fixturesRoot, "swift-cli");
+    const project = findProject(root);
+    const pipeline = detectPipeline(project, {});
+    expect(pipeline.buildCli).toBeTrue();
+    expect(pipeline.signCli).toBeTrue();
+    expect(pipeline.createZip).toBeTrue();
+    expect(pipeline.notarizeZip).toBeTrue();
+  });
+
+  it("disables buildApp, createDmg, sparkle for CLI", () => {
+    const root = path.join(fixturesRoot, "swift-cli");
+    const project = findProject(root);
+    const pipeline = detectPipeline(project, {});
+    expect(pipeline.buildApp).toBeFalse();
+    expect(pipeline.createDmg).toBeFalse();
+    expect(pipeline.sparkle).toBeFalse();
+  });
+
+  it("does not require entitlements for CLI projects", () => {
+    const root = path.join(fixturesRoot, "swift-cli");
+    const project = findProject(root);
+    const pipeline = detectPipeline(project, {});
+    expect(pipeline.missingEntitlements).toBeFalse();
+  });
+
+  it("sets default architectures to arm64 and x86_64", () => {
+    const root = path.join(fixturesRoot, "swift-cli");
+    const project = findProject(root);
+    const pipeline = detectPipeline(project, {});
+    expect(pipeline.architectures).toEqual(["arm64", "x86_64"]);
+  });
+
+  it("sets executable from project", () => {
+    const root = path.join(fixturesRoot, "swift-cli");
+    const project = findProject(root);
+    const pipeline = detectPipeline(project, {});
+    expect(pipeline.executable).toBe("swift-cli");
   });
 });

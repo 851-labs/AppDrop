@@ -9,6 +9,10 @@ export interface SparkleTools {
 }
 
 export interface Pipeline {
+  // Project type
+  projectType: "xcode" | "swift-package";
+
+  // Xcode app pipeline
   buildApp: boolean;
   signApp: boolean;
   notarizeApp: boolean;
@@ -17,6 +21,16 @@ export interface Pipeline {
   sparkle: boolean;
   generateAppcast: boolean;
   sparkleEnabled: boolean;
+
+  // CLI pipeline (Swift Package)
+  buildCli: boolean;
+  signCli: boolean;
+  createZip: boolean;
+  notarizeZip: boolean;
+  executable?: string;
+  architectures: string[];
+
+  // Common
   outputDir: string;
   buildDir: string;
   infoPlistPath: string | null;
@@ -36,6 +50,12 @@ export function detectPipeline(project: ProjectInfo, options: DetectionOptions =
   const outputDir = path.resolve(project.root, options.outputDir ?? DEFAULT_OUTPUT_DIR);
   const buildDir = path.resolve(project.root, options.buildDir ?? DEFAULT_BUILD_DIR);
 
+  // For Swift Package CLI projects, use CLI pipeline
+  if (project.type === "swift-package") {
+    return detectCliPipeline(project, outputDir, buildDir);
+  }
+
+  // Xcode app pipeline
   const infoPlistPath = locateInfoPlist(project.root);
   let missingInfoPlist = false;
 
@@ -47,6 +67,7 @@ export function detectPipeline(project: ProjectInfo, options: DetectionOptions =
   missingInfoPlist = sparkleEnabled && !infoPlistPath;
 
   return {
+    projectType: "xcode",
     buildApp: true,
     signApp: true,
     notarizeApp: true,
@@ -55,6 +76,11 @@ export function detectPipeline(project: ProjectInfo, options: DetectionOptions =
     sparkle,
     generateAppcast: sparkle,
     sparkleEnabled,
+    buildCli: false,
+    signCli: false,
+    createZip: false,
+    notarizeZip: false,
+    architectures: [],
     outputDir,
     buildDir,
     infoPlistPath,
@@ -62,6 +88,36 @@ export function detectPipeline(project: ProjectInfo, options: DetectionOptions =
     sparkleTools,
     missingEntitlements: !entitlementsPath,
     missingInfoPlist,
+  };
+}
+
+export function detectCliPipeline(project: ProjectInfo, outputDir: string, buildDir: string): Pipeline {
+  return {
+    projectType: "swift-package",
+    // Disable Xcode app pipeline
+    buildApp: false,
+    signApp: false,
+    notarizeApp: false,
+    createDmg: false,
+    notarizeDmg: false,
+    sparkle: false,
+    generateAppcast: false,
+    sparkleEnabled: false,
+    // Enable CLI pipeline
+    buildCli: true,
+    signCli: true,
+    createZip: true,
+    notarizeZip: true,
+    executable: project.executable,
+    architectures: ["arm64", "x86_64"],
+    // Common
+    outputDir,
+    buildDir,
+    infoPlistPath: null,
+    entitlementsPath: null,
+    sparkleTools: null,
+    missingEntitlements: false,
+    missingInfoPlist: false,
   };
 }
 

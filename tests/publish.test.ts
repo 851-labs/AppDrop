@@ -79,6 +79,59 @@ describe("publish assets", () => {
   });
 });
 
+describe("CLI artifact detection", () => {
+  it("detects executable files without extension", () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "appdrop-publish-cli-"));
+    const releaseDir = path.join(tempDir, "build", "release");
+    fs.mkdirSync(releaseDir, { recursive: true });
+    fs.writeFileSync(path.join(releaseDir, "mycli"), "#!/bin/sh\necho hello");
+    fs.chmodSync(path.join(releaseDir, "mycli"), 0o755);
+
+    try {
+      const assets = resolvePublishAssets([], tempDir);
+      expect(assets).toEqual([path.join(releaseDir, "mycli")]);
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it("ignores non-executable files", () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "appdrop-publish-cli-"));
+    const releaseDir = path.join(tempDir, "build", "release");
+    fs.mkdirSync(releaseDir, { recursive: true });
+    fs.writeFileSync(path.join(releaseDir, "notexec"), "data");
+    fs.chmodSync(path.join(releaseDir, "notexec"), 0o644);
+
+    try {
+      const assets = resolvePublishAssets([], tempDir);
+      expect(assets).toEqual([]);
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it("includes DMG and appcast alongside CLI binary", () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "appdrop-publish-mixed-"));
+    const releaseDir = path.join(tempDir, "build", "release");
+    fs.mkdirSync(releaseDir, { recursive: true });
+    fs.writeFileSync(path.join(releaseDir, "mycli"), "#!/bin/sh\necho hello");
+    fs.chmodSync(path.join(releaseDir, "mycli"), 0o755);
+    fs.writeFileSync(path.join(releaseDir, "app.dmg"), "");
+    fs.writeFileSync(path.join(releaseDir, "appcast.xml"), "");
+
+    try {
+      const assets = resolvePublishAssets([], tempDir);
+      expect(assets).toEqual([
+        path.join(releaseDir, "app.dmg"),
+        path.join(releaseDir, "appcast.xml"),
+        path.join(releaseDir, "mycli"),
+      ]);
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+});
+
 function baseOptions() {
   return {
     tag: undefined,

@@ -38,6 +38,7 @@ try {
           root: process.cwd(),
           scheme: flags.scheme,
           project: flags.project,
+          executable: flags.executable,
           output: flags.output,
           dryRun: flags.dryRun,
           noNotarize: flags.noNotarize,
@@ -146,7 +147,7 @@ try {
 }
 
 function helpText() {
-  return `appdrop - zero-config macOS release CLI\n\nUSAGE:\n  appdrop release [--dry-run]\n  appdrop build\n  appdrop dmg --app-path <path>\n  appdrop notarize --zip-path <path> | --dmg-path <path>\n  appdrop appcast --dmg-path <path>\n  appdrop doctor [--fix]\n  appdrop setup-ci [--xcode-only | --keychain-only]\n  appdrop publish --asset <path> [--asset <path>...]\n\nFLAGS:\n  --scheme <name>        Override scheme\n  --project <path>       Override xcodeproj\n  --output <dir>         Output directory\n  --app-path <path>      Path to .app bundle\n  --dmg-path <path>      Path to .dmg\n  --zip-path <path>      Path to .zip\n  --appcast-url <url>    Override appcast URL\n  --xcode-path <path>    Override Xcode.app location\n  --keychain-name <name> Override keychain name\n  --write-github-env     Emit KEYCHAIN_* lines for GitHub Actions\n  --install-sparkle      Install Sparkle tools if missing\n  --xcode-only           Only run Xcode selection\n  --keychain-only        Only run keychain setup\n  --force                Recreate keychain if it exists\n  --no-dmg               Skip DMG creation
+  return `appdrop - zero-config macOS release CLI\n\nUSAGE:\n  appdrop release [--dry-run]\n  appdrop build\n  appdrop dmg --app-path <path>\n  appdrop notarize --zip-path <path> | --dmg-path <path>\n  appdrop appcast --dmg-path <path>\n  appdrop doctor [--fix]\n  appdrop setup-ci [--xcode-only | --keychain-only]\n  appdrop publish --asset <path> [--asset <path>...]\n\nFLAGS:\n  --scheme <name>        Override scheme\n  --project <path>       Override xcodeproj\n  --executable <name>    Override CLI executable name (Swift Package only)\n  --output <dir>         Output directory\n  --app-path <path>      Path to .app bundle\n  --dmg-path <path>      Path to .dmg\n  --zip-path <path>      Path to .zip\n  --appcast-url <url>    Override appcast URL\n  --xcode-path <path>    Override Xcode.app location\n  --keychain-name <name> Override keychain name\n  --write-github-env     Emit KEYCHAIN_* lines for GitHub Actions\n  --install-sparkle      Install Sparkle tools if missing\n  --xcode-only           Only run Xcode selection\n  --keychain-only        Only run keychain setup\n  --force                Recreate keychain if it exists\n  --no-dmg               Skip DMG creation
   --no-notarize          Skip notarization
   --no-sparkle           Skip Sparkle signing + appcast
   --tag <tag>            Release tag for publish

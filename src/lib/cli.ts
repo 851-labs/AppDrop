@@ -12,6 +12,7 @@ export interface GlobalFlags {
   scheme?: string;
   project?: string;
   output?: string;
+  executable?: string;
   noNotarize: boolean;
   noDmg: boolean;
   noSparkle: boolean;
@@ -58,11 +59,12 @@ const COMMAND_HELP: Record<
   { description: string; usage: string; flags: string[] }
 > = {
   release: {
-    description: "Build, sign, notarize, and package your macOS app",
+    description: "Build, sign, notarize, and package your macOS app or CLI",
     usage: "appdrop release [options]",
     flags: [
       "--scheme <name>       Override scheme",
       "--project <path>      Override xcodeproj",
+      "--executable <name>   Override CLI executable name (Swift Package only)",
       "--output <dir>        Output directory",
       "--no-dmg              Skip DMG creation",
       "--no-notarize         Skip notarization",
@@ -290,6 +292,10 @@ export function parseArgs(argv: string[]): ParsedArgs {
         break;
       case "--output":
         flags.output = consumeValue(args, index, arg);
+        index += 1;
+        break;
+      case "--executable":
+        flags.executable = consumeValue(args, index, arg);
         index += 1;
         break;
       case "--no-notarize":
