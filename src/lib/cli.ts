@@ -277,6 +277,17 @@ export function parseArgs(argv: string[]): ParsedArgs {
     }
   }
 
+  function consumeValue(args: string[], index: number, flag: string): string {
+    const value = args[index + 1];
+    if (!value || value.startsWith("-")) {
+      throw new UsageError(`${flag} requires a value`, {
+        hint: `Run 'appdrop ${command} --help' for usage.`,
+        command,
+      });
+    }
+    return value;
+  }
+
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
     switch (arg) {
@@ -406,19 +417,14 @@ export function parseArgs(argv: string[]): ParsedArgs {
         break;
       default:
         if (arg.startsWith("-")) {
-          throw new UsageError(`Unknown flag: ${arg}`);
+          throw new UsageError(`Unknown flag: ${arg}`, {
+            hint: `Run 'appdrop ${command} --help' for available options.`,
+            command,
+          });
         }
         break;
     }
   }
 
   return { command, flags, helpCommand };
-}
-
-function consumeValue(args: string[], index: number, flag: string): string {
-  const value = args[index + 1];
-  if (!value || value.startsWith("-")) {
-    throw new UsageError(`Missing value for ${flag}`);
-  }
-  return value;
 }

@@ -14,7 +14,12 @@ export class MissingEnvError extends AppdropError {
 }
 
 export class UsageError extends AppdropError {
-  constructor(message: string) {
+  readonly hint?: string;
+  readonly command?: string;
+
+  constructor(message: string, options?: { hint?: string; command?: string }) {
     super(message, 2);
+    this.hint = options?.hint;
+    this.command = options?.command;
   }
 }

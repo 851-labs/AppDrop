@@ -1,6 +1,6 @@
 import { parseArgs, commandHelpText } from "./lib/cli";
 import { Logger } from "./lib/logger";
-import { AppdropError } from "./lib/errors";
+import { AppdropError, UsageError } from "./lib/errors";
 import { runRelease } from "./commands/release";
 import { runDoctor } from "./commands/doctor";
 import { runBuild } from "./commands/build";
@@ -12,7 +12,18 @@ import { runPublish } from "./commands/publish";
 
 import { APPDROP_VERSION } from "./lib/version";
 
-const { command, flags, helpCommand } = parseArgs(process.argv.slice(2));
+let command: string;
+let flags: ReturnType<typeof parseArgs>["flags"];
+let helpCommand: string | undefined;
+
+try {
+  const parsed = parseArgs(process.argv.slice(2));
+  command = parsed.command;
+  flags = parsed.flags;
+  helpCommand = parsed.helpCommand;
+} catch (error) {
+  handleError(error);
+}
 
 if (flags.version) {
   process.stdout.write(`${APPDROP_VERSION}\n`);
@@ -138,12 +149,7 @@ try {
       process.exit(2);
   }
 } catch (error) {
-  if (error instanceof AppdropError) {
-    logger.warn(error.message);
-    process.exit(error.code);
-  }
-  logger.warn(error instanceof Error ? error.message : String(error));
-  process.exit(1);
+  handleError(error);
 }
 
 function helpText() {
@@ -175,4 +181,20 @@ GLOBAL FLAGS:
 
 Run 'appdrop <command> --help' for command-specific options.
 `;
+}
+
+function handleError(error: unknown): never {
+  if (error instanceof UsageError) {
+    process.stderr.write(`error: ${error.message}\n`);
+    if (error.hint) {
+      process.stderr.write(`\n${error.hint}\n`);
+    }
+    process.exit(error.code);
+  }
+  if (error instanceof AppdropError) {
+    process.stderr.write(`${error.message}\n`);
+    process.exit(error.code);
+  }
+  process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+  process.exit(1);
 }
