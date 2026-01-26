@@ -56,11 +56,15 @@ export const VALID_COMMANDS = [
 
 const COMMAND_HELP: Record<
   string,
-  { description: string; usage: string; flags: string[] }
+  { description: string; examples: string[]; flags: string[] }
 > = {
   release: {
     description: "Build, sign, notarize, and package your macOS app or CLI",
-    usage: "appdrop release [options]",
+    examples: [
+      "appdrop release                  # Full release pipeline",
+      "appdrop release --dry-run        # Preview without executing",
+      "appdrop release --no-notarize    # Skip notarization (faster)",
+    ],
     flags: [
       "--scheme <name>       Override scheme",
       "--project <path>      Override xcodeproj",
@@ -75,7 +79,11 @@ const COMMAND_HELP: Record<
   },
   build: {
     description: "Build and export the app bundle",
-    usage: "appdrop build [options]",
+    examples: [
+      "appdrop build                    # Build with auto-detected scheme",
+      "appdrop build --scheme MyApp     # Build specific scheme",
+      "appdrop build --output dist      # Custom output directory",
+    ],
     flags: [
       "--scheme <name>       Override scheme",
       "--project <path>      Override xcodeproj",
@@ -85,7 +93,9 @@ const COMMAND_HELP: Record<
   },
   dmg: {
     description: "Create a DMG from an app bundle",
-    usage: "appdrop dmg --app-path <path> [options]",
+    examples: [
+      "appdrop dmg --app-path build/MyApp.app",
+    ],
     flags: [
       "--app-path <path>     Path to .app bundle (required)",
       "--scheme <name>       Override scheme",
@@ -96,7 +106,10 @@ const COMMAND_HELP: Record<
   },
   notarize: {
     description: "Notarize a DMG or ZIP with Apple",
-    usage: "appdrop notarize --zip-path <path> | --dmg-path <path>",
+    examples: [
+      "appdrop notarize --dmg-path build/MyApp.dmg",
+      "appdrop notarize --zip-path build/mycli.zip",
+    ],
     flags: [
       "--zip-path <path>     Path to .zip",
       "--dmg-path <path>     Path to .dmg",
@@ -105,7 +118,9 @@ const COMMAND_HELP: Record<
   },
   appcast: {
     description: "Generate a Sparkle appcast entry",
-    usage: "appdrop appcast --dmg-path <path> [options]",
+    examples: [
+      "appdrop appcast --dmg-path build/MyApp.dmg",
+    ],
     flags: [
       "--dmg-path <path>     Path to .dmg (required)",
       "--appcast-url <url>   Override appcast URL",
@@ -115,7 +130,10 @@ const COMMAND_HELP: Record<
   },
   doctor: {
     description: "Check project configuration for issues",
-    usage: "appdrop doctor [options]",
+    examples: [
+      "appdrop doctor                   # Check for issues",
+      "appdrop doctor --fix             # Auto-fix issues",
+    ],
     flags: [
       "--scheme <name>       Override scheme",
       "--project <path>      Override xcodeproj",
@@ -124,7 +142,11 @@ const COMMAND_HELP: Record<
   },
   "setup-ci": {
     description: "Configure CI environment (Xcode + keychain)",
-    usage: "appdrop setup-ci [options]",
+    examples: [
+      "appdrop setup-ci                 # Full CI setup",
+      "appdrop setup-ci --keychain-only # Just keychain",
+      "appdrop setup-ci --install-sparkle",
+    ],
     flags: [
       "--xcode-only          Only run Xcode selection",
       "--keychain-only       Only run keychain setup",
@@ -137,9 +159,13 @@ const COMMAND_HELP: Record<
   },
   publish: {
     description: "Create a GitHub release with assets",
-    usage: "appdrop publish --asset <path> [options]",
+    examples: [
+      "appdrop publish                  # Auto-detect assets in build/release",
+      "appdrop publish --draft          # Create as draft",
+      "appdrop publish --asset my.dmg --asset appcast.xml",
+    ],
     flags: [
-      "--tag <tag>           Release tag",
+      "--tag <tag>           Release tag (default: from git)",
       "--title <title>       Release title",
       "--notes <text>        Release notes",
       "--notes-file <path>   Release notes file",
@@ -159,8 +185,8 @@ export function commandHelpText(command: string): string {
   const lines = [
     `${help.description}`,
     "",
-    "USAGE:",
-    `  ${help.usage}`,
+    "EXAMPLES:",
+    ...help.examples.map((e) => `  ${e}`),
     "",
     "FLAGS:",
     ...help.flags.map((f) => `  ${f}`),

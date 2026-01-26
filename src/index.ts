@@ -147,15 +147,32 @@ try {
 }
 
 function helpText() {
-  return `appdrop - zero-config macOS release CLI\n\nUSAGE:\n  appdrop release [--dry-run]\n  appdrop build\n  appdrop dmg --app-path <path>\n  appdrop notarize --zip-path <path> | --dmg-path <path>\n  appdrop appcast --dmg-path <path>\n  appdrop doctor [--fix]\n  appdrop setup-ci [--xcode-only | --keychain-only]\n  appdrop publish --asset <path> [--asset <path>...]\n\nFLAGS:\n  --scheme <name>        Override scheme\n  --project <path>       Override xcodeproj\n  --executable <name>    Override CLI executable name (Swift Package only)\n  --output <dir>         Output directory\n  --app-path <path>      Path to .app bundle\n  --dmg-path <path>      Path to .dmg\n  --zip-path <path>      Path to .zip\n  --appcast-url <url>    Override appcast URL\n  --xcode-path <path>    Override Xcode.app location\n  --keychain-name <name> Override keychain name\n  --write-github-env     Emit KEYCHAIN_* lines for GitHub Actions\n  --install-sparkle      Install Sparkle tools if missing\n  --xcode-only           Only run Xcode selection\n  --keychain-only        Only run keychain setup\n  --force                Recreate keychain if it exists\n  --no-dmg               Skip DMG creation
-  --no-notarize          Skip notarization
-  --no-sparkle           Skip Sparkle signing + appcast
-  --tag <tag>            Release tag for publish
-  --title <title>        Release title for publish
-  --notes <text>         Release notes for publish
-  --notes-file <path>    Release notes file for publish
-  --asset <path>         Release asset for publish (repeatable)
-  --draft                Create a draft release
-  --prerelease           Mark release as prerelease
-  -n, --dry-run          Print pipeline only\n  --fix                  Apply project fixes (doctor)\n  --json                 JSON output\n  -q, --quiet            Errors only\n  -v, --verbose          Verbose output\n  --version              Print version\n  -h, --help             Show help\n`;
+  return `appdrop - zero-config macOS release CLI
+
+EXAMPLES:
+  appdrop release                  Build, sign, notarize, and package
+  appdrop release --dry-run        Preview the release pipeline
+  appdrop doctor --fix             Check and fix project issues
+  appdrop publish                  Create GitHub release with assets
+
+COMMANDS:
+  release      Build, sign, notarize, and package (default)
+  build        Build and export the app bundle
+  dmg          Create a DMG from an app bundle
+  notarize     Notarize a DMG or ZIP with Apple
+  appcast      Generate a Sparkle appcast entry
+  doctor       Check project configuration
+  setup-ci     Configure CI environment
+  publish      Create a GitHub release
+
+GLOBAL FLAGS:
+  -n, --dry-run          Preview without executing
+  --json                 JSON output
+  -q, --quiet            Errors only
+  -v, --verbose          Verbose output
+  --version              Print version
+  -h, --help             Show help
+
+Run 'appdrop <command> --help' for command-specific options.
+`;
 }

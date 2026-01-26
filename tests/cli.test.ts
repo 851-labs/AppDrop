@@ -114,7 +114,7 @@ describe("commandHelpText", () => {
   it("returns help text for valid commands", () => {
     for (const cmd of VALID_COMMANDS) {
       const text = commandHelpText(cmd);
-      expect(text).toContain("USAGE:");
+      expect(text).toContain("EXAMPLES:");
       expect(text).toContain("FLAGS:");
     }
   });
