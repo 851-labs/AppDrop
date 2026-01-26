@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 
 import { parseArgs, commandHelpText, VALID_COMMANDS } from "../src/lib/cli";
+import { UsageError } from "../src/lib/errors";
 
 describe("parseArgs", () => {
   describe("global help flags", () => {
@@ -166,5 +167,59 @@ describe("--executable flag", () => {
     const result = parseArgs(["--executable", "custom-name"]);
     expect(result.command).toBe("release");
     expect(result.flags.executable).toBe("custom-name");
+  });
+});
+
+describe("error handling", () => {
+  describe("missing flag values", () => {
+    it("throws UsageError when --scheme has no value", () => {
+      expect(() => parseArgs(["release", "--scheme"])).toThrow(UsageError);
+    });
+
+    it("throws UsageError when -s has no value", () => {
+      expect(() => parseArgs(["build", "-s"])).toThrow(UsageError);
+    });
+
+    it("throws UsageError when --output has no value", () => {
+      expect(() => parseArgs(["release", "--output"])).toThrow(UsageError);
+    });
+
+    it("includes command context in error", () => {
+      try {
+        parseArgs(["build", "--scheme"]);
+      } catch (error) {
+        expect(error).toBeInstanceOf(UsageError);
+        const usageError = error as UsageError;
+        expect(usageError.message).toBe("--scheme requires a value");
+        expect(usageError.command).toBe("build");
+        expect(usageError.hint).toContain("appdrop build --help");
+      }
+    });
+
+    it("treats flag-like value as missing value", () => {
+      expect(() => parseArgs(["release", "--scheme", "--verbose"])).toThrow(UsageError);
+    });
+  });
+
+  describe("unknown flags", () => {
+    it("throws UsageError for unknown flag", () => {
+      expect(() => parseArgs(["release", "--unknown-flag"])).toThrow(UsageError);
+    });
+
+    it("includes command context in unknown flag error", () => {
+      try {
+        parseArgs(["doctor", "--foo"]);
+      } catch (error) {
+        expect(error).toBeInstanceOf(UsageError);
+        const usageError = error as UsageError;
+        expect(usageError.message).toBe("Unknown flag: --foo");
+        expect(usageError.command).toBe("doctor");
+        expect(usageError.hint).toContain("appdrop doctor --help");
+      }
+    });
+
+    it("throws for unknown short flag", () => {
+      expect(() => parseArgs(["release", "-x"])).toThrow(UsageError);
+    });
   });
 });
